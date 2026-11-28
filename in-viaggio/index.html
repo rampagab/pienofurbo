@@ -207,10 +207,8 @@ const Q = [
 
   {id:"idee", sec:"La tua app ideale", type:"ideas", title:"Ti servirebbe?", hint:"Rispondi d'istinto. «Uso già altro» se lo risolvi già con un'altra app."},
   {id:"bacchetta", sec:"La tua app ideale", type:"text", optional:true, title:"Bacchetta magica: se un'app potesse fare UNA cosa per te quando viaggi o ti sposti, cosa sarebbe?", hint:"Anche un'idea strana va benissimo. Va bene anche un vocale.", ph:"Vale tutto, anche quello che sembra impossibile."},
-  {id:"freni", sec:"La tua app ideale", type:"multi", title:"Cosa ti farebbe NON usare un'app così?",
-   opts:[["🔐","Dovermi registrare"],["📢","La pubblicità"],["💶","Che sia a pagamento"],["🔔","Troppe notifiche"],["🪪","Che chieda troppi dati (targa, documenti…)"],["📦","Ho già troppe app"],["😌","Niente, la proverei"]], other:true},
-
-  {id:"contatto", sec:"Ultima cosa", type:"contact", optional:true, title:"Vuoi essere tra i primi a provarla?", hint:"Lascia un numero o un'email. È facoltativo e lo uso solo per questo."}
+  {id:"freni", sec:"La tua app ideale", type:"multi", title:"Cosa ti farebbe NON usare un'app così?", hint:"È l'ultima domanda: poi premi Invia.",
+   opts:[["🔐","Dovermi registrare"],["📢","La pubblicità"],["💶","Che sia a pagamento"],["🔔","Troppe notifiche"],["🪪","Che chieda troppi dati (targa, documenti…)"],["📦","Ho già troppe app"],["😌","Niente, la proverei"]], other:true}
 ];
 
 /* ===================== STATO ===================== */
@@ -253,7 +251,7 @@ function render(){
   s.append(el("p",{class:"kicker",text:q.sec}), el("h2",{text:q.title,id:"qt"}));
   if(q.hint) s.append(el("p",{class:"hint",text:q.hint}));
   main.append(s);
-  ({single:rSingle,multi:rMulti,text:rText,ideas:rIdeas,contact:rContact})[q.type](q,s);
+  ({single:rSingle,multi:rMulti,text:rText,ideas:rIdeas})[q.type](q,s);
   window.scrollTo(0,0);
 }
 
@@ -331,7 +329,7 @@ function rMulti(q,s){
     inp.oninput=()=>{ other=inp.value; refresh(); };
     s.append(inp);
   }
-  const go = cta("Avanti",false,next);
+  const go = goBtn(s);
   refresh();
 }
 
@@ -465,20 +463,18 @@ function rIdeas(q,s){
   showCard();
 }
 
-function rContact(q,s){
-  const inp = el("input",{type:"text",inputmode:"email",autocomplete:"email",placeholder:"Numero o email (facoltativo)","aria-labelledby":"qt",style:"margin-top:22px"});
-  inp.value = state.answers.contatto||"";
-  inp.oninput=()=>{ state.answers.contatto=inp.value; save(); };
-  s.append(inp);
-  s.append(el("p",{class:"hint",text:"Premendo Invia mandi le risposte. Grazie davvero!"}));
+/* Ultima domanda: il pulsante invia le risposte invece di andare avanti */
+function goBtn(s){
+  if(state.step < visible().length-1) return cta("Avanti",false,next);
   const err = el("p",{class:"err",role:"alert"}); s.append(err);
-  const b = cta("Invia le risposte",true,async()=>{
+  const b = cta("Invia le risposte",false,async()=>{
     b.disabled=true; b.textContent="Invio in corso…"; err.textContent="";
     const ok = await submit();
     if(ok){ state.sent=true; next(); }
     else { b.disabled=false; b.textContent="Riprova"; err.textContent="Non sono riuscito a inviare. Controlla la connessione e riprova."; }
   });
   b.className="cta accent";
+  return b;
 }
 
 function renderDone(){
